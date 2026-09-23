@@ -1,0 +1,39 @@
+{% extends "canvas_oauth/base.html" %}
+{% block title %}Courses - Canvas Developer Key Demo{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Your active courses</h1>
+  <p>Signed in as <strong>{{ user.first_name|default:user.username }}</strong>.</p>
+  {% if courses %}
+    <table>
+      <thead>
+        <tr>
+          <th>Course</th>
+          <th>Code</th>
+          <th>Term</th>
+          <th>Enrollment</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for course in courses %}
+          <tr>
+            <td>{{ course.name }}</td>
+            <td>{{ course.course_code }}</td>
+            <td>{{ course.term.name|default:"" }}</td>
+            <td>{% for enrollment in course.enrollments %}{{ enrollment.type }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No active courses found.</p>
+  {% endif %}
+  <p>
+    <a class="button" href="{% url 'canvas_oauth:home' %}">Home</a>
+    <form class="inline" method="post" action="{% url 'canvas_oauth:logout' %}">
+      {% csrf_token %}
+      <button class="button secondary" type="submit">Sign out</button>
+    </form>
+  </p>
+</div>
+{% endblock %}

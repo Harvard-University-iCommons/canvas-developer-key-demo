@@ -1,0 +1,9 @@
+{% extends "canvas_oauth/base.html" %}
+{% block title %}Error - Canvas Developer Key Demo{% endblock %}
+{% block content %}
+<div class="card">
+  <h1 class="error">Something went wrong</h1>
+  <p>{{ message }}</p>
+  <p><a class="button" href="{% url 'canvas_oauth:home' %}">Back to home</a></p>
+</div>
+{% endblock %}

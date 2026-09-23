@@ -1,0 +1,31 @@
+[project]
+name = "canvas-developer-key-demo"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "cryptography>=50.0.1",
+    "django>=6.1.1",
+    "python-dotenv>=1.2.3",
+    "requests>=2.34.2",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-django>=4.14.0",
+    "responses>=0.26.3",
+    "ruff>=0.16.8",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.test_settings"
+python_files = ["test_*.py"]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

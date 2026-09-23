@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Canvas Developer Key Demo{% endblock %}</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; margin: 0; background: #f6f7f8; color: #1d1d1d; }
+    header { background: #0b3c5d; color: #fff; padding: 1rem 1.5rem; }
+    header a { color: #fff; text-decoration: none; font-weight: 600; }
+    main { max-width: 900px; margin: 2rem auto; padding: 0 1rem; }
+    .card { background: #fff; border: 1px solid #ddd; border-radius: 6px; padding: 1.5rem; }
+    .button { display: inline-block; background: #0b3c5d; color: #fff; border: 0; border-radius: 4px; padding: .6rem 1rem; font-size: 1rem; cursor: pointer; text-decoration: none; }
+    .button.secondary { background: #666; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { text-align: left; padding: .5rem .75rem; border-bottom: 1px solid #e3e3e3; }
+    th { background: #f0f0f0; }
+    .error { color: #a40000; }
+    form.inline { display: inline; }
+  </style>
+</head>
+<body>
+  <header><a href="{% url 'canvas_oauth:home' %}">Canvas Developer Key Demo</a></header>
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

@@ -1,0 +1,20 @@
+{% extends "canvas_oauth/base.html" %}
+{% block title %}Home - Canvas Developer Key Demo{% endblock %}
+{% block content %}
+<div class="card">
+  <h1>Canvas Developer Key OAuth2 demo</h1>
+  {% if user.is_authenticated %}
+    <p>Signed in as <strong>{{ user.first_name|default:user.username }}</strong>.</p>
+    <p>
+      <a class="button" href="{% url 'canvas_oauth:courses' %}">View my courses</a>
+      <form class="inline" method="post" action="{% url 'canvas_oauth:logout' %}">
+        {% csrf_token %}
+        <button class="button secondary" type="submit">Sign out</button>
+      </form>
+    </p>
+  {% else %}
+    <p>This app uses the Canvas OAuth2 authorization code flow to list the courses you are enrolled in.</p>
+    <p><a class="button" href="{% url 'canvas_oauth:login' %}">Sign in with Canvas</a></p>
+  {% endif %}
+</div>
+{% endblock %}
