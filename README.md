@@ -1,8 +1,8 @@
 # Canvas Developer Key OAuth demo
 
-This is a small Django app that shows the Canvas LMS Developer Key OAuth2 flow. A Developer Key is an API key that a Canvas admin creates in Canvas. The app uses the OAuth2 authorization code grant to get two tokens for the signed-in Canvas user. The access token is valid for 1 hour. The refresh token gets a new access token. The app stores both tokens encrypted. When the access token expires, the app refreshes it. Then the app lists the courses the user is enrolled in.
+This is a small Django app that shows the Canvas LMS Developer Key OAuth2 flow. A Developer Key is an API key that a Canvas admin creates in Canvas. The app uses the OAuth2 authorization code grant to get two tokens for the signed-in Canvas user: a refresh token and an access token. The access token is valid for 1 hour. The refresh token gets a new access token. The app stores both tokens encrypted. When the access token expires, the app refreshes it. Then the app lists the courses the user is enrolled in.
 
-This app is a demo. The database is SQLite. A production deployment must use PostgreSQL on RDS and a real secrets store (for example AWS Secrets Manager) for the environment variables.
+This app is a basic demo. The database is SQLite. A production deployment would use a database such as PostgreSQLand a real secrets store (for example AWS Secrets Manager) for the environment variables.
 
 ## How the OAuth flow works
 
@@ -13,7 +13,7 @@ This app is a demo. The database is SQLite. A production deployment must use Pos
 5. Canvas returns `access_token`, `refresh_token`, `expires_in` (3600 seconds), and the Canvas `user`. The app creates or updates a Django user, encrypts both tokens, saves them, and signs the user in.
 6. The app calls `GET {CANVAS_BASE_URL}/api/v1/courses` with the header `Authorization: Bearer <access_token>`. It follows the `Link` header (`rel="next"`) until there are no more pages.
 7. If the access token is within 60 seconds of expiry, or if Canvas returns 401, the app sends `POST {CANVAS_BASE_URL}/login/oauth2/token` with `grant_type=refresh_token`. Canvas returns a new access token. The refresh token does not change. If the refresh fails, for example because an admin revoked the key, the app deletes the stored tokens and asks the user to sign in again.
-8. On logout, the app sends `DELETE {CANVAS_BASE_URL}/login/oauth2/token` with the bearer token. This revokes the token at Canvas. Then the app deletes the token row and ends the Django session.
+8. On logout, the app sends `DELETE {CANVAS_BASE_URL}/login/oauth2/token` with the bearer token. This revokes the token in Canvas. Then the app deletes the token row and ends the Django session.
 
 ## Security practices
 
@@ -37,13 +37,15 @@ Canvas allows `http://localhost` redirect URIs for development. You do not need 
 
 ## Create the Developer Key in Canvas
 
+The Developer Key must be created by a root-level Canvas admin.  If you don't have this role, ask your Canvas admin to create the key for you.
+
 1. Sign in to Canvas as an account admin.
 2. Go to Admin, then Developer Keys.
 3. Click "+ Developer Key", then "+ API Key".
-4. Enter a Key Name. Any name works.
+4. Enter a Key Name. For example, "Canvas Developer Key Demo".
 5. Enter an Owner Email.
 6. In Redirect URIs, enter `http://localhost:8000/oauth/callback/`. This value must match `CANVAS_REDIRECT_URI` exactly, including the trailing slash.
-7. Turn Enforce Scopes ON and select `url:GET|/api/v1/courses`. If you want a broader token, leave Enforce Scopes off.
+7. Turn Enforce Scopes ON and select `url:GET|/api/v1/courses`.
 8. Click Save.
 9. In the key list, turn the key state to ON.
 10. Copy the numeric ID from the Details column. This is `CANVAS_CLIENT_ID`.
@@ -86,19 +88,19 @@ Canvas allows `http://localhost` redirect URIs for development. You do not need 
    | `CANVAS_CLIENT_ID` | The numeric developer key ID. |
    | `CANVAS_CLIENT_SECRET` | The developer key secret. |
    | `CANVAS_REDIRECT_URI` | `http://localhost:8000/oauth/callback/` |
-   | `CANVAS_SCOPES` | Optional. Default is `url:GET|/api/v1/courses`. |
+   | `CANVAS_SCOPES` | Default is `url:GET|/api/v1/courses`.  This must match the scopes selected when creating the developer key. |
    | `TOKEN_ENCRYPTION_KEY` | The value from step 3. |
 
 6. Create the database.
 
    ```sh
-   uv run python manage.py migrate
+   uv run manage.py migrate
    ```
 
 7. Start the server.
 
    ```sh
-   uv run python manage.py runserver
+   uv run manage.py runserver
    ```
 
 8. Open `http://localhost:8000` in a browser.
@@ -119,7 +121,7 @@ Set `DJANGO_DEBUG=true` for local development over plain HTTP. When `DJANGO_DEBU
 5. Force a token refresh. Sign in, then open a Django shell.
 
    ```sh
-   uv run python manage.py shell
+   uv run manage.py shell
    ```
 
    Run these lines.
