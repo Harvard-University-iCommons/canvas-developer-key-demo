@@ -2,7 +2,7 @@
 
 This is a small Django app that shows the Canvas LMS Developer Key OAuth2 flow. A Developer Key is an API key that a Canvas admin creates in Canvas. The app uses the OAuth2 authorization code grant to get two tokens for the signed-in Canvas user: a refresh token and an access token. The access token is valid for 1 hour. The refresh token gets a new access token. The app stores both tokens encrypted. When the access token expires, the app refreshes it. Then the app lists the courses the user is enrolled in.
 
-This app is a basic demo. The database is SQLite. A production deployment would use a database such as PostgreSQLand a real secrets store (for example AWS Secrets Manager) for the environment variables.
+This app is a basic demo. The database is SQLite. For production, use a database such as PostgreSQL and a real secrets store (for example AWS Secrets Manager) for the environment variables.
 
 ## How the OAuth flow works
 
@@ -12,8 +12,36 @@ This app is a basic demo. The database is SQLite. A production deployment would 
 4. The app makes sure that the returned `state` matches the value in the session. Then the app sends `POST {CANVAS_BASE_URL}/login/oauth2/token` with `grant_type=authorization_code`, `client_id`, `client_secret`, `redirect_uri`, and `code`.
 5. Canvas returns `access_token`, `refresh_token`, `expires_in` (3600 seconds), and the Canvas `user`. The app creates or updates a Django user, encrypts both tokens, saves them, and signs the user in.
 6. The app calls `GET {CANVAS_BASE_URL}/api/v1/courses` with the header `Authorization: Bearer <access_token>`. It follows the `Link` header (`rel="next"`) until there are no more pages.
-7. If the access token is within 60 seconds of expiry, or if Canvas returns 401, the app sends `POST {CANVAS_BASE_URL}/login/oauth2/token` with `grant_type=refresh_token`. Canvas returns a new access token. The refresh token does not change. If the refresh fails, for example because an admin revoked the key, the app deletes the stored tokens and asks the user to sign in again.
+7. If the access token is within 60 seconds of expiry, or if Canvas returns 401, the app sends `POST {CANVAS_BASE_URL}/login/oauth2/token` with `grant_type=refresh_token`. Canvas returns a new access token. The refresh token does not change. The refresh can fail, for example because an admin revoked the key. If it fails, the app deletes the stored tokens and asks the user to sign in again.
 8. On logout, the app sends `DELETE {CANVAS_BASE_URL}/login/oauth2/token` with the bearer token. This revokes the token in Canvas. Then the app deletes the token row and ends the Django session.
+
+This sequence diagram shows the successful sign-in path. Each arrow is a request or a response between the browser, the app, and Canvas.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User (browser)
+    participant App as Django app
+    participant Canvas
+
+    User->>App: GET /oauth/login/ (click "Sign in with Canvas")
+    App->>App: Create random state and store it in the session
+    App-->>User: 302 redirect to Canvas
+    User->>Canvas: GET /login/oauth2/auth?client_id, response_type=code, redirect_uri, state, scope
+    Canvas-->>User: Consent screen
+    User->>Canvas: Click Authorize
+    Canvas-->>User: 302 redirect to CANVAS_REDIRECT_URI?code, state
+    User->>App: GET /oauth/callback/?code, state
+    App->>App: Make sure that state matches the session value
+    App->>Canvas: POST /login/oauth2/token (grant_type=authorization_code, code, client_secret)
+    Canvas-->>App: access_token, refresh_token, expires_in, user
+    App->>App: Encrypt and save tokens, sign in the Django user
+    App-->>User: 302 redirect to /courses/
+    User->>App: GET /courses/
+    App->>Canvas: GET /api/v1/courses (Authorization: Bearer token)
+    Canvas-->>App: Courses
+    App-->>User: Courses table
+```
 
 ## Security practices
 
@@ -37,7 +65,7 @@ Canvas allows `http://localhost` redirect URIs for development. You do not need 
 
 ## Create the Developer Key in Canvas
 
-The Developer Key must be created by a root-level Canvas admin.  If you don't have this role, ask your Canvas admin to create the key for you.
+The Developer Key must be created by a root-level Canvas admin.  If you do not have this role, ask your Canvas admin to create the key for you.
 
 1. Sign in to Canvas as an account admin.
 2. Go to Admin, then Developer Keys.
@@ -88,7 +116,7 @@ The Developer Key must be created by a root-level Canvas admin.  If you don't ha
    | `CANVAS_CLIENT_ID` | The numeric developer key ID. |
    | `CANVAS_CLIENT_SECRET` | The developer key secret. |
    | `CANVAS_REDIRECT_URI` | `http://localhost:8000/oauth/callback/` |
-   | `CANVAS_SCOPES` | Default is `url:GET|/api/v1/courses`.  This must match the scopes selected when creating the developer key. |
+   | `CANVAS_SCOPES` | Default is `url:GET|/api/v1/courses`. This value must match the scopes that you selected in the developer key. |
    | `TOKEN_ENCRYPTION_KEY` | The value from step 3. |
 
 6. Create the database.
